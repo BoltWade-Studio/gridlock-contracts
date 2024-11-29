@@ -4,8 +4,8 @@ pub struct Map {
     #[key]
     pub level: u32,
     pub size: Size,
-    pub movable_objects: Array<u32>,
-    pub obstacles: Array<u32>,
+    pub movable_objects: Array<MovableObjects>,
+    pub obstacles: Array<Obstacle>,
 }
 
 

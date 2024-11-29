@@ -1,13 +1,21 @@
 use starknet::ContractAddress;
-use gridlock::models::map::Map;
+use gridlock::models::map::{Size, MovableObjects, Obstacle};
 
 #[derive(Drop, Serde)]
 #[dojo::model]
 pub struct Player {
     #[key]
     pub address: ContractAddress,
-    pub progress: Map,
+    pub progress: PlayerProgress,
     pub point: u256
+}
+
+#[derive(Drop, Serde, Introspect)]
+pub struct PlayerProgress {
+    pub level: u32,
+    pub size: Size,
+    pub movable_objects: Array<MovableObjects>,
+    pub obstacles: Array<Obstacle>,
 }
 
 #[derive(Drop, Copy, Serde, PartialEq)]

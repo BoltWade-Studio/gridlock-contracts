@@ -2,3 +2,5 @@ target
 dojo_mainnet.toml
 .vscode
 .DS_Store
+manifest_dev.json
+scripts
