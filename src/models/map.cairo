@@ -4,14 +4,15 @@ pub struct Map {
     #[key]
     pub level: u32,
     pub size: Size,
-    pub movable_objects: Array<MovableObjects>,
-    pub obstacles: Array<Obstacle>,
+    pub movable_objects: Span<MovableObjects>,
+    pub obstacles: Span<Obstacle>,
 }
 
 
 #[derive(Drop, Copy, Serde, Introspect)]
 pub struct MovableObjects {
     pub id: u32,
+    pub name: felt252,
     pub position: Position,
     pub size: Size,
     pub rotation: u32,
@@ -20,6 +21,7 @@ pub struct MovableObjects {
 #[derive(Drop, Copy, Serde, Introspect)]
 pub struct Obstacle {
     pub id: u32,
+    pub name: felt252,
     pub position: Position,
     pub size: Size,
     pub rotation: u32,

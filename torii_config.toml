@@ -1,5 +1,5 @@
 # The World address to index.
-world_address = "0x4438e763fe1e16bab1172b8c86da658fdab0de1727e8e17f36b2e06e7b0d5c5"
+world_address = "0x597719541899bf15377763762cd58216a80f3f296a24c72eab09f9fad088465"
  
 # Default RPC URL configuration
 rpc = "https://api.cartridge.gg/x/gridlock/katana"
