@@ -31,6 +31,7 @@ mod GridLock {
         object_id: u32,
         direction: felt252,
         level: u32,
+        hit_id: u32,
         is_finished: bool,
         point: u256,
     }
@@ -201,17 +202,20 @@ mod GridLock {
             let mut new_movable_objects: Array<MovableObjects> = array![];
             let map = self.parse_map(player_progress);
             let mut is_finished = true;
+            let mut hit_id = 0;
             for movable_object in player_progress
                 .movable_objects {
                     if *movable_object.id == object_id {
                         self.assert_valid_move(direction, *movable_object);
                         is_target = true;
-                        let new_movable_object = self.execute_move(*movable_object, direction, map);
+                        let (new_movable_object, id) = self
+                            .execute_move(*movable_object, direction, map);
                         new_movable_objects.append(new_movable_object);
                         if new_movable_object.position.x != 0
                             || new_movable_object.position.y != 0 {
                             is_finished = false;
                         }
+                        hit_id = id;
                     } else {
                         if *movable_object.position.x != 0 || *movable_object.position.y != 0 {
                             is_finished = false;
@@ -225,18 +229,28 @@ mod GridLock {
             }
 
             let mut level = player_data.progress.level;
+            let mut obstacles = player_data.progress.obstacles;
             if is_finished {
                 player_data.point = player_data.point + 100;
                 player_data.progress.level = level + 1;
+            } else {
+                obstacles = self.update_obstacles(player_data.progress.obstacles);
             }
 
             player_data.progress.movable_objects = new_movable_objects.span();
+            player_data.progress.obstacles = obstacles;
             world.write_model(@player_data);
 
             world
                 .emit_event(
                     @PlayerMoved {
-                        player, object_id, direction, level, is_finished, point: player_data.point
+                        player,
+                        object_id,
+                        direction,
+                        level,
+                        hit_id,
+                        is_finished,
+                        point: player_data.point
                     }
                 );
         }
@@ -322,7 +336,7 @@ mod GridLock {
             movable_object: MovableObjects,
             direction: felt252,
             map: Span<Span<u32>>
-        ) -> MovableObjects {
+        ) -> (MovableObjects, u32) {
             let mut x = movable_object.position.x;
             let mut y = movable_object.position.y;
             let size = movable_object.size;
@@ -441,6 +455,10 @@ mod GridLock {
                 y = 0;
             };
 
+            if x == movable_object.position.x && y == movable_object.position.y {
+                panic_with_felt252('Object not moving');
+            }
+
             let new_movable_object = MovableObjects {
                 id: movable_object.id,
                 name: movable_object.name,
@@ -448,7 +466,45 @@ mod GridLock {
                 size: movable_object.size,
                 rotation: movable_object.rotation,
             };
-            new_movable_object
+            (new_movable_object, *collision_ids.at(0))
+        }
+
+        fn update_obstacles(ref self: ContractState, obstacles: Span<Obstacle>) -> Span<Obstacle> {
+            let mut new_obstacles = array![];
+            for obstacle in obstacles {
+                if *obstacle.is_movable {
+                    if *obstacle.is_interactable {
+                        new_obstacles
+                            .append(
+                                Obstacle {
+                                    id: *obstacle.id,
+                                    name: *obstacle.name,
+                                    position: *obstacle.position,
+                                    size: *obstacle.size,
+                                    rotation: *obstacle.rotation,
+                                    is_movable: *obstacle.is_movable,
+                                    is_interactable: false,
+                                }
+                            );
+                    } else {
+                        new_obstacles
+                            .append(
+                                Obstacle {
+                                    id: *obstacle.id,
+                                    name: *obstacle.name,
+                                    position: *obstacle.position,
+                                    size: *obstacle.size,
+                                    rotation: *obstacle.rotation,
+                                    is_movable: *obstacle.is_movable,
+                                    is_interactable: true,
+                                }
+                            );
+                    }
+                } else {
+                    new_obstacles.append(*obstacle);
+                }
+            };
+            new_obstacles.span()
         }
 
         fn parse_map(self: @ContractState, map: PlayerProgress) -> Span<Span<u32>> {
